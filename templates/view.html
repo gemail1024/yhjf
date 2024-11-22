@@ -5,15 +5,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body { 
-            max-width: 800px; 
-            margin: 0 auto; 
+        /* 添加容器样式 */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
             padding: 20px;
+            background-color: #fff;  /* 亮色模式背景色 */
+            min-height: 100vh;       /* 确保容器至少占满整个视口高度 */
+        }
+
+        /* 修改原来的 body 样式 */
+        body { 
+            margin: 0;
+            padding: 0;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: #f5f5f5;
             color: #333;
-            position: relative;
-            padding-top: 20px;
+        }
+
+        /* 暗色模式样式调整 */
+        [data-theme="dark"] .container {
+            background-color: #1a1a1a;  /* 暗色模式下容器背景色 */
+        }
+
+        [data-theme="dark"] body {
+            background-color: #000;     /* 暗色模式下body背景色 */
         }
 
         /* 消息容器 */
@@ -212,12 +228,13 @@
             }
             
             .message-content {
-                background: #363636;
+                background: #1a1a1a;
                 border-color: #404040;
+                color: #e0e0e0;
             }
             
             input, textarea {
-                background-color: #363636;
+                background-color: #2d2d2d;
                 color: #e0e0e0;
                 border-color: #404040;
             }
@@ -259,7 +276,7 @@
         }
 
         [data-theme="dark"] .message-content {
-            background: #363636;
+            background: #1a1a1a;
             border-color: #404040;
             color: #e0e0e0;
         }
@@ -270,22 +287,25 @@
         }
 
         [data-theme="dark"] .notice {
-            background-color: #2d2d2d;
+            background-color: #1a1a1a;
             border-left-color: #ffa000;
+            color: #e0e0e0;
         }
 
         [data-theme="dark"] input[type="password"] {
-            background-color: #363636;
+            background-color: #2d2d2d;
             color: #e0e0e0;
             border-color: #404040;
         }
 
         [data-theme="dark"] .error {
-            background-color: rgba(198, 40, 40, 0.2);
+            background-color: rgba(198, 40, 40, 0.15);
+            color: #ff6b6b;
         }
 
         [data-theme="dark"] .expired-message {
-            background-color: rgba(198, 40, 40, 0.2);
+            background-color: rgba(198, 40, 40, 0.15);
+            color: #ff6b6b;
         }
 
         [data-theme="dark"] .theme-toggle {
@@ -318,6 +338,10 @@
                 font-size: 13px;
             }
         }
+
+        [data-theme="dark"] h1 {
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
@@ -325,61 +349,64 @@
         🌓 切换主题
     </button>
     
-    <h1>阅后即焚消息</h1>
-    
-    {% if error %}
-        <div class="error">{{ error }}</div>
-        <div class="button-container">
-            <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
-        </div>
-    {% endif %}
-    
-    {% if need_password %}
-        <div class="password-form">
-            <form method="post">
-                <div class="message-title">
-                    <i class="lock-icon">🔒</i>
-                    此消息已加密
-                </div>
-                <div class="password-input-wrapper">
-                    <input type="password" 
-                           name="password" 
-                           placeholder="请输入密码..." 
-                           required
-                           autocomplete="off">
-                </div>
-                <div class="attempts-warning">
-                    <i class="warning-icon">⚠️</i>
-                    剩余尝试次数：{{ remaining_attempts }}次
-                </div>
-                <button type="submit">确认</button>
-            </form>
-        </div>
-    {% endif %}
-    
-    {% if content %}
-        <div id="messageContent" class="message">
-            <div class="message-title">消息内容</div>
-            <div id="contentText" class="message-content">{{ content }}</div>
-            <div class="notice">
-                {% if destroy_type == 'burn' %}
-                    <span>⚠️ 刷新页面后消息将无法再次查看</span>
-                {% else %}
-                    <span>⚠️ <span id="countdown" class="countdown"></span>后消息将自动销毁</span>
-                {% endif %}
-            </div>
+    <!-- 添加容器 -->
+    <div class="container">
+        <h1>阅后即焚消息</h1>
+        
+        {% if error %}
+            <div class="error">{{ error }}</div>
             <div class="button-container">
                 <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
             </div>
-        </div>
+        {% endif %}
+        
+        {% if need_password %}
+            <div class="password-form">
+                <form method="post">
+                    <div class="message-title">
+                        <i class="lock-icon">🔒</i>
+                        此消息已加密
+                    </div>
+                    <div class="password-input-wrapper">
+                        <input type="password" 
+                               name="password" 
+                               placeholder="请输入密码..." 
+                               required
+                               autocomplete="off">
+                    </div>
+                    <div class="attempts-warning">
+                        <i class="warning-icon">⚠️</i>
+                        剩余尝试次数：{{ remaining_attempts }}次
+                    </div>
+                    <button type="submit">确认</button>
+                </form>
+            </div>
+        {% endif %}
+        
+        {% if content %}
+            <div id="messageContent" class="message">
+                <div class="message-title">消息内容</div>
+                <div id="contentText" class="message-content">{{ content }}</div>
+                <div class="notice">
+                    {% if destroy_type == 'burn' %}
+                        <span>⚠️ 刷新页面后消息将无法再次查看</span>
+                    {% else %}
+                        <span>⚠️ <span id="countdown" class="countdown"></span>后消息将自动销毁</span>
+                    {% endif %}
+                </div>
+                <div class="button-container">
+                    <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
+                </div>
+            </div>
 
-        <div id="expiredNotice" class="expired-message" style="display: none;">
-            <p>消息已过期，刷新页面将无法再次查</p>
-            <div class="button-container">
-                <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
+            <div id="expiredNotice" class="expired-message" style="display: none;">
+                <p>消息已过期，刷新页面将无法再次查</p>
+                <div class="button-container">
+                    <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
+                </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 
     <script>
         // 添加主题切换功能
@@ -401,6 +428,13 @@
 
         // 添加系统主题变化监听
         if (window.matchMedia) {
+            // 初始化时检查系统主题
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时使用系统主题
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+
+            // 监听系统主题变化
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
                 if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时响应系统变化
                     document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
