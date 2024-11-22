@@ -505,10 +505,9 @@
     </div>
 
     <script>
-        // 修改主题切换相关的 JavaScript 代码
+        // 使用完全相同的主题切换代码
         const themeToggle = document.getElementById('themeToggle');
 
-        // 定义一个函数来设置主题
         function setTheme(theme, saveToStorage = true) {
             document.body.setAttribute('data-theme', theme);
             if (saveToStorage) {
@@ -516,38 +515,32 @@
             }
         }
 
-        // 定义一个函数来获取系统主题
         function getSystemTheme() {
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
 
-        // 初始化主题
         function initializeTheme() {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
                 setTheme(savedTheme, false);
             } else {
                 const systemTheme = getSystemTheme();
-                setTheme(systemTheme, true);  // 保存系统主题作为初始设置
+                setTheme(systemTheme, true);
             }
         }
 
-        // 页面加载时初始化主题
         initializeTheme();
 
-        // 监听系统主题变化
         const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         darkModeMediaQuery.addListener((e) => {
             const savedTheme = localStorage.getItem('theme');
             const systemTheme = e.matches ? 'dark' : 'light';
             
-            // 如果当前主题与系统主题不同，更新主题
             if (document.body.getAttribute('data-theme') !== systemTheme) {
                 setTheme(systemTheme, true);
             }
         });
 
-        // 主题切换按钮点击事件
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
