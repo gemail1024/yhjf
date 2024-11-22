@@ -62,22 +62,27 @@ http://127.0.0.1:5000
 可以通过设置环境变量来配置服务：
 
 - `SERVER_URL`: 服务器地址，默认为 `http://127.0.0.1:5000`
+- `USE_ZWS`: 是否使用零宽字符（true/false），默认为 false
+  - true: 生成短链接，如 `domain.com/‌hash`
+  - false: 生成普通链接，如 `domain.com/view/hash`（默认）
 
-## Docker 环境变量
-
-在使用 Docker 部署时，可以通过以下环境变量进行配置：
-
-- `SERVER_URL`: 服务器地址（必填）
-- `TZ`: 时区，默认为 `Asia/Shanghai`
-
-示例：
+### 使用普通链接（默认）：
 ```bash
 docker run -d \
-  -p 5000:5000 \
-  -e SERVER_URL=http://your-domain.com \
-  -e TZ=Asia/Shanghai \
-  --name yhjf \
-  scp96/yhjf:latest
+-p 5000:5000 \
+-e SERVER_URL=http://your-domain.com \
+--name yhjf \
+scp96/yhjf:latest
+```
+
+### 使用零宽字符短链接：
+```bash
+docker run -d \
+-p 5000:5000 \
+-e SERVER_URL=http://your-domain.com \
+-e USE_ZWS=true \
+--name yhjf \
+scp96/yhjf:latest
 ```
 
 ## 使用说明

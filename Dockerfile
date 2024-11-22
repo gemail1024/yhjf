@@ -22,6 +22,8 @@ RUN mkdir -p /app/data
 
 # 设置服务器地址环境变量，可在运行时覆盖
 ENV SERVER_URL=http://127.0.0.1:5000
+#是否使用零宽字符模式
+ENV USE_ZWS=false
 
 # 暴露端口
 EXPOSE 5000

@@ -20,10 +20,26 @@ DATABASE_PATH = os.path.join(CURRENT_DIR, 'messages.db')
 # 从环境变量获取服务器地址，默认为本地地址
 SERVER_URL = os.getenv('SERVER_URL', 'http://127.0.0.1:5000')
 
-# 在文件开头添加路径配置
+# 配置项
+class Config:
+    _use_zws = os.getenv('USE_ZWS', 'false').lower() == 'true'  # 默认为 false
+
+    @classmethod
+    def use_zws(cls):
+        return cls._use_zws
+
+    @classmethod
+    def set_use_zws(cls, value):
+        cls._use_zws = bool(value)
+
+    # 普通路径前缀
+    NORMAL_PATHS = {
+        'VIEW': '_',  # 改为下划线
+        'API': '-'    # 改为短横线
+    }
+
 class ZWSPaths:
     """零宽字符路径配置"""
-    # 不使用斜杠分隔，直接用零宽字符作为前缀
     VIEW = '\u200b\u200c'     # 直接作为hash的前缀
     API  = '\u200d\u2060'     # 直接作为hash的前缀
 
@@ -42,7 +58,27 @@ def get_next_counter():
     except sqlite3.Error:
         return 0
 
-def generate_hash2(length=4):
+def generate_hash(length=6):
+    """生成短哈希值
+    length: 生成的哈希长度，默认6位
+    """
+    chars = string.ascii_letters + string.digits  # a-z A-Z 0-9
+    while True:
+        hash = ''.join(random.choices(chars, k=length))
+        db = get_db()
+        cursor = db.cursor()
+        try:
+            cursor.execute('SELECT hash FROM Hash WHERE hash = ?', (hash,))
+            if not cursor.fetchone():
+                cursor.execute('INSERT INTO Hash (hash) VALUES (?)', (hash,))
+                db.commit()
+                return hash
+        except sqlite3.Error as e:
+            print(f"数据库错误: {e}")
+            db.rollback()
+            raise
+
+def generate_zero_width_chars(length=4):
     """使用真正的零宽字符生成哈希"""
     # 只使用完全不可见的零宽字符
     zero_width_chars = [
@@ -62,14 +98,19 @@ def generate_hash2(length=4):
     
     return base_hash + counter_hash
 
-def create_url(base_url, prefix, hash):
+def create_url(base_url, path_type, hash):
     """
-    创建没有额外斜杠的URL
-    base_url: 基础URL
-    prefix: 零宽字符前缀
-    hash: 消息哈希
+    创建URL，根据配置决定是否使用零宽字符
     """
-    return f"{base_url.rstrip('/')}/{prefix}{hash}"
+    base_url = base_url.rstrip('/')
+    if Config.use_zws():
+        # 使用零宽字符
+        prefix = getattr(ZWSPaths, path_type)
+        return f"{base_url}/{prefix}{hash}"
+    else:
+        # 使用短前缀
+        prefix = Config.NORMAL_PATHS[path_type]
+        return f"{base_url}/{prefix}{hash}"  # 移除额外的斜杠
 
 @app.route('/')
 def index():
@@ -104,7 +145,12 @@ def create_message():
             return jsonify({'error': '过期时间必须是数字'}), 400
         
         # 使用零宽字符生成哈希
-        hash = generate_hash2()
+
+        if Config.use_zws():
+            hash = generate_zero_width_chars()
+        else:
+            hash = generate_hash()
+
         db = get_db()
         cursor = db.cursor()
         
@@ -125,7 +171,7 @@ def create_message():
         db.commit()
         
         # 生成使用零宽字符路径的链接
-        message_url = create_url(SERVER_URL, ZWSPaths.VIEW, hash)
+        message_url = create_url(SERVER_URL, 'VIEW', hash)
         
         return jsonify({
             'success': True,
@@ -140,13 +186,15 @@ def create_message():
 def view_message(hash_path):
     """处理所有可能的哈希路径"""
     try:
-        # 检查是否以VIEW前缀开头
-        if not hash_path.startswith(ZWSPaths.VIEW):
+        # 检查是否是零宽字符路径
+        if hash_path.startswith(ZWSPaths.VIEW):
+            hash = hash_path[len(ZWSPaths.VIEW):]
+        # 检查是否是短前缀路径
+        elif hash_path.startswith(Config.NORMAL_PATHS['VIEW']):
+            hash = hash_path[len(Config.NORMAL_PATHS['VIEW']):]
+        else:
             return render_template('view.html', error='消息不存在或已失效')
-        
-        # 提取实际的哈希值（去掉前缀）
-        hash = hash_path[len(ZWSPaths.VIEW):]
-        
+            
         db = get_db()
         cursor = db.cursor()
         
@@ -176,7 +224,7 @@ def view_message(hash_path):
             db.commit()
             return render_template('view.html', error='消息已被销毁')
             
-        # 判断定时销毁
+        # 判断时销毁
         if msg['destroyType'] == 0 and msg['destroyedAt']:
             current_time = datetime.datetime.now()
             destroy_time = datetime.datetime.strptime(
@@ -235,7 +283,7 @@ def view_message(hash_path):
                     remaining_attempts=remaining_attempts
                 )
         
-        # 如果是阅后即焚，更查看次数
+        # 果是阅后即焚，更查看次数
         if msg['destroyType'] == 1:
             cursor.execute('''
                 UPDATE Msg 
@@ -293,6 +341,15 @@ def run_schedule():
     while True:
         schedule.run_pending()
         time.sleep(60)
+
+# 添加一个管理接口（可选）
+@app.route('/admin/config', methods=['POST'])
+def update_config():
+    if request.json.get('use_zws') is not None:
+        Config.set_use_zws(request.json['use_zws'])
+    return jsonify({
+        'use_zws': Config.use_zws()
+    })
 
 if __name__ == '__main__':
     # 设置定时任务
