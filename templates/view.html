@@ -26,12 +26,12 @@
 
         /* 暗色模式样式调整 */
         [data-theme="dark"] {
-            background-color: #1a1a1a;
+            background-color: #1a1a1a !important;
             color: #e0e0e0;
         }
 
         [data-theme="dark"] .container {
-            background-color: #1a1a1a;
+            background-color: #1a1a1a !important;
         }
 
         [data-theme="dark"] body {
@@ -283,25 +283,18 @@
         }
 
         @media (prefers-color-scheme: dark) {
-            body {
+            body:not([data-theme="light"]) {
                 background-color: #1a1a1a;
                 color: #e0e0e0;
             }
             
-            .message, .password-form, #messageForm {
+            body:not([data-theme="light"]) .container {
+                background-color: #1a1a1a;
+            }
+            
+            body:not([data-theme="light"]) .message,
+            body:not([data-theme="light"]) .password-form {
                 background: #2d2d2d;
-            }
-            
-            .message-content {
-                background: #1a1a1a;
-                border-color: #404040;
-                color: #e0e0e0;
-            }
-            
-            input, textarea {
-                background-color: #2d2d2d;
-                color: #e0e0e0;
-                border-color: #404040;
             }
         }
 
@@ -424,6 +417,27 @@
         [data-theme="dark"] h1 {
             color: #e0e0e0;
         }
+
+        /* 添加亮色模式的明确样式 */
+        [data-theme="light"] {
+            background-color: #f5f5f5 !important;
+            color: #333;
+        }
+
+        [data-theme="light"] .container {
+            background-color: #fff !important;
+        }
+
+        [data-theme="light"] .message,
+        [data-theme="light"] .password-form {
+            background: #fff !important;
+        }
+
+        [data-theme="light"] .message-content {
+            background: #f8f9fa !important;
+            border-color: #e9ecef !important;
+            color: #2c3e50 !important;
+        }
     </style>
 </head>
 <body>
@@ -491,39 +505,35 @@
     </div>
 
     <script>
-        // 添加主题切换功能
+        // 修改主题切换功能
         const themeToggle = document.getElementById('themeToggle');
         
         // 检查本地存储的主题设置
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            document.body.setAttribute('data-theme', savedTheme);
+        } else {
+            // 如果没有保存的主题，则使用系统主题
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.body.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
         }
         
         themeToggle.addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            document.documentElement.setAttribute('data-theme', newTheme);
+            
+            document.body.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
         });
 
-        // 添加系统主题变化监听
+        // 修改系统主题变化监听
         if (window.matchMedia) {
-            const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            
-            // 处理主题变化的函数
-            const handleThemeChange = (e) => {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
                 if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时响应系统变化
                     const newTheme = e.matches ? 'dark' : 'light';
-                    document.documentElement.setAttribute('data-theme', newTheme);
+                    document.body.setAttribute('data-theme', newTheme);
                 }
-            };
-
-            // 初始化时检查系统主题
-            handleThemeChange(darkModeMediaQuery);
-
-            // 监听系统主题变化
-            darkModeMediaQuery.addEventListener('change', handleThemeChange);
+            });
         }
 
         // 添加倒计时功能
