@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>查看消息</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        /* 消息容器 */
+        .message {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin: 20px 0;
+        }
+
+        /* 消息标题 */
+        .message-title {
+            color: #2c3e50;
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 消息内容 */
+        .message-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+            font-size: 15px;
+            color: #2c3e50;
+            border: 1px solid #e9ecef;
+        }
+
+        /* 提示信息 */
+        .notice {
+            background-color: #fff8e1;
+            border-left: 3px solid #ffa000;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #795548;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 倒计时样式 */
+        .countdown {
+            color: #f57c00;
+            font-weight: 500;
+        }
+
+        /* 密码表单 */
+        .password-form {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin: 20px 0;
+        }
+
+        .password-form input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            margin: 10px 0;
+            transition: border-color 0.3s ease;
+        }
+
+        .password-form input[type="password"]:focus {
+            outline: none;
+            border-color: #2196F3;
+        }
+
+        /* 错误提示 */
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-size: 15px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 按钮样式 */
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            background-color: #4CAF50;
+            color: white;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-container {
+            margin-top: 20px;
+        }
+
+        .new-msg-btn {
+            background-color: #FF9800;
+        }
+
+        /* 过期提示 */
+        .expired-message {
+            background-color: #ffebee;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 移动端适配 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            .message, .password-form {
+                padding: 20px;
+            }
+
+            .message-content {
+                padding: 15px;
+            }
+
+            button {
+                padding: 14px;
+            }
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        /* 移动端适配 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 22px;
+                margin-bottom: 20px;
+            }
+
+            /* ... 其他移动端样式保持不变 ... */
+        }
+    </style>
+</head>
+<body>
+    <h1>阅后即焚消息</h1>
+    
+    {% if error %}
+        <div class="error">{{ error }}</div>
+        <div class="button-container">
+            <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
+        </div>
+    {% endif %}
+    
+    {% if need_password %}
+        <div class="password-form">
+            <form method="post">
+                <div class="message-title">
+                    <i class="lock-icon">🔒</i>
+                    此消息已加密
+                </div>
+                <div class="password-input-wrapper">
+                    <input type="password" 
+                           name="password" 
+                           placeholder="请输入密码..." 
+                           required
+                           autocomplete="off">
+                    <button type="button" class="toggle-password">👁️</button>
+                </div>
+                <div class="attempts-warning">
+                    <i class="warning-icon">⚠️</i>
+                    剩余尝试次数：{{ remaining_attempts }}次
+                </div>
+                <button type="submit">确认</button>
+            </form>
+        </div>
+    {% endif %}
+    
+    {% if content %}
+        <div id="messageContent" class="message">
+            <div class="message-title">消息内容</div>
+            <div id="contentText" class="message-content">{{ content }}</div>
+            <div class="notice">
+                {% if destroy_type == 'burn' %}
+                    <span>⚠️ 刷新页面后消息将无法再次查看</span>
+                {% else %}
+                    <span>⚠️ <span id="countdown" class="countdown"></span>后消息将自动销毁</span>
+                {% endif %}
+            </div>
+            <div class="button-container">
+                <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
+            </div>
+        </div>
+
+        <div id="expiredNotice" class="expired-message" style="display: none;">
+            <p>消息已过期，刷新页面将无法再次查看</p>
+            <div class="button-container">
+                <button onclick="window.location.href='/'" class="new-msg-btn">再发一条</button>
+            </div>
+        </div>
+    {% endif %}
+</body>
+</html> 

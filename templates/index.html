@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>阅后即焚消息</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        /* 表单容器 */
+        #messageForm {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 表单组样式 */
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        /* 输入框样式 */
+        textarea, input[type="password"] { 
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+            background-color: #f8f9fa;
+        }
+
+        textarea:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #2196F3;
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* 单选按钮组样式 */
+        .radio-group {
+            margin: 15px 0;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .radio-option input[type="radio"] {
+            margin: 0;
+        }
+
+        /* 内联输入框样式 */
+        .inline-input {
+            width: 60px !important;
+            padding: 5px 8px !important;
+            margin: 0 5px !important;
+            display: inline-block;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        /* 按钮样式 */
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 创建按钮 */
+        .create-btn {
+            background-color: #4CAF50;
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        /* 结果区域样式 */
+        #result { 
+            background: white;
+            margin-top: 20px;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: none;
+        }
+
+        #result h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        /* URL显示区域 */
+        #messageUrl {
+            display: block;
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            color: #2196F3;
+        }
+
+        /* 按钮组 */
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .copy-btn {
+            background-color: #2196F3;
+            color: white;
+            flex: 1;
+        }
+
+        .copy-btn.success {
+            background-color: #4CAF50;
+        }
+
+        .new-msg-btn {
+            background-color: #FF9800;
+            color: white;
+            flex: 1;
+        }
+
+        /* 移动端适配 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+
+            #messageForm, #result {
+                padding: 20px;
+            }
+
+            .radio-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                margin: 5px 0;
+            }
+
+            /* 调整表单间距 */
+            .form-group {
+                margin-bottom: 15px;
+            }
+            
+            /* 优化按钮触摸区域 */
+            button {
+                min-height: 44px;
+            }
+            
+            /* 优化输入框在移动端的体验 */
+            input, textarea {
+                font-size: 16px; /* 防止 iOS 自动放大 */
+            }
+        }
+
+        /* 添加字数统计 */
+        .char-count {
+            text-align: right;
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* 提示消息样式 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        /* 添加到两个页面的 style 中 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message, .password-form, #result {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a;
+                color: #e0e0e0;
+            }
+            
+            .message, .password-form, #messageForm {
+                background: #2d2d2d;
+            }
+            
+            .message-content {
+                background: #363636;
+                border-color: #404040;
+            }
+            
+            input, textarea {
+                background-color: #363636;
+                color: #e0e0e0;
+                border-color: #404040;
+            }
+        }
+
+        /* Toast 提示样式 */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            border-radius: 4px;
+            z-index: 1000;
+        }
+
+        /* 加载动画样式 */
+        .loading-spinner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 在暗色模式下调整加载动画和提示的颜色 */
+        @media (prefers-color-scheme: dark) {
+            .loading-spinner {
+                background: rgba(0, 0, 0, 0.8);
+            }
+            
+            .spinner {
+                border-color: #2d2d2d;
+                border-top-color: #3498db;
+            }
+            
+            .toast {
+                background: rgba(33, 33, 33, 0.9);
+            }
+        }
+
+        /* 主题切换按钮样式 */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        /* 暗色模式样式 */
+        [data-theme="dark"] {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] #messageForm,
+        [data-theme="dark"] #result {
+            background: #2d2d2d;
+        }
+
+        [data-theme="dark"] textarea,
+        [data-theme="dark"] input {
+            background-color: #363636;
+            color: #e0e0e0;
+            border-color: #404040;
+        }
+
+        [data-theme="dark"] .loading-spinner {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        [data-theme="dark"] .theme-toggle {
+            background: #2d2d2d;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 在 body 的最开始添加加载动画 HTML -->
+    <div class="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 在 body 标签开始处添加切换按钮 -->
+    <button id="themeToggle" class="theme-toggle">
+        🌓 切换主题
+    </button>
+
+    <h1>创建阅后即焚消息</h1>
+    <div id="messageForm">
+        <div class="form-group">
+            <label>消息内容</label>
+            <textarea id="content" placeholder="请输入要发送的消息内容..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>销毁方式</label>
+            <div class="radio-group">
+                <div class="radio-option">
+                    <input type="radio" id="burnType1" name="destroyType" value="burn" checked>
+                    <label for="burnType1">阅后即焚</label>
+                </div>
+                
+                <div class="radio-option">
+                    <input type="radio" id="burnType2" name="destroyType" value="expire">
+                    <label for="burnType2">
+                        <input type="number" id="expireMinutes" value="5" min="1" class="inline-input"> 分钟后销毁
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>密码保护（可选）</label>
+            <input type="password" id="password" placeholder="置访问密码...">
+        </div>
+        
+        <button class="create-btn" onclick="createMessage()">创建消息</button>
+    </div>
+
+    <div id="result">
+        <h3>消息已创建成功！</h3>
+        <p>访问链接：</p>
+        <div id="messageUrl"></div>
+        <div class="button-group">
+            <button class="copy-btn" onclick="copyUrl(this)">复制链接</button>
+            <button class="new-msg-btn" onclick="createNew()">再发一条</button>
+        </div>
+    </div>
+
+    <script>
+        // 添加 Toast 提示函数
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // 删除原来的显示/隐藏事件监听器，改为启用/禁用输入框
+        document.querySelectorAll('input[name="destroyType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const expireInput = document.getElementById('expireMinutes');
+                expireInput.disabled = this.value === 'burn';
+            });
+        });
+
+        async function createMessage() {
+            const button = document.querySelector('.create-btn');
+            button.disabled = true;
+            button.innerHTML = '创建中...';
+            
+            const content = document.getElementById('content').value;
+            const password = document.getElementById('password').value;
+            const destroyType = document.querySelector('input[name="destroyType"]:checked').value;
+            const expireMinutes = document.getElementById('expireMinutes').value;
+            
+            if (!content.trim()) {
+                alert('请输入消息内容！');
+                button.disabled = false;
+                button.innerHTML = '创建消息';
+                return;
+            }
+
+            if (destroyType === 'expire' && (!expireMinutes || expireMinutes < 1)) {
+                alert('请输入有效的销毁时间！');
+                button.disabled = false;
+                button.innerHTML = '创建消息';
+                return;
+            }
+
+            try {
+                const response = await fetch('/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        content, 
+                        password, 
+                        expireMinutes: parseInt(expireMinutes),
+                        destroyType
+                    })
+                });
+                
+                const data = await response.json();
+                if (data.url) {
+                    const url = data.url;
+                    document.getElementById('messageUrl').textContent = url;
+                    document.getElementById('messageForm').style.display = 'none';
+                    document.getElementById('result').style.display = 'block';
+                }
+            } catch (error) {
+                alert('创建失败，请重试');
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '创建消息';
+            }
+        }
+
+        function copyUrl(button) {
+            const url = document.getElementById('messageUrl').textContent;
+            
+            // 创建一个临时的 textarea 元素
+            const textarea = document.createElement('textarea');
+            textarea.value = url;
+            textarea.style.position = 'fixed';  // 防止页面滚动
+            textarea.style.opacity = '0';       // 隐藏元素
+            document.body.appendChild(textarea);
+            
+            try {
+                // 选择文本
+                textarea.select();
+                textarea.setSelectionRange(0, 99999); // 兼容移动端
+                
+                // 执行复制命令
+                document.execCommand('copy');
+                
+                // 更改按钮样式
+                button.classList.add('success');
+                button.textContent = '已复制';
+                
+                // 3秒后恢复按钮样式
+                setTimeout(() => {
+                    button.classList.remove('success');
+                    button.textContent = '复制链接';
+                }, 3000);
+                
+            } catch (err) {
+                console.error('复制失败:', err);
+                button.textContent = '复制失败';
+                button.style.backgroundColor = '#f44336';
+                
+                // 3秒后恢复按钮样式
+                setTimeout(() => {
+                    button.textContent = '复制链接';
+                    button.style.backgroundColor = '#2196F3';
+                }, 3000);
+            } finally {
+                // 移除临时元素
+                document.body.removeChild(textarea);
+            }
+        }
+
+        function createNew() {
+            // 重置表单
+            document.getElementById('content').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('expireMinutes').value = '5';
+            document.getElementById('burnType1').checked = true;
+            document.getElementById('expireMinutes').disabled = true;
+            
+            // 切换显示
+            document.getElementById('messageForm').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+        }
+
+        // 页面加载时初始化输入框状态
+        window.onload = function() {
+            document.getElementById('expireMinutes').disabled = true;
+        }
+
+        // 添加主题切换功能
+        const themeToggle = document.getElementById('themeToggle');
+        
+        // 检查本地存储的主题设置
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    </script>
+</body>
+</html> 
