@@ -24,12 +24,75 @@
         }
 
         /* 暗色模式样式调整 */
+        [data-theme="dark"] {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+
         [data-theme="dark"] .container {
-            background-color: #1a1a1a;  /* 暗色模式下容器背景色 */
+            background-color: #1a1a1a;
         }
 
         [data-theme="dark"] body {
-            background-color: #000;     /* 暗色模式下body背景色 */
+            background-color: #000;
+        }
+
+        /* 消息容器暗色模式 */
+        [data-theme="dark"] .message {
+            background: #2d2d2d;
+            color: #e0e0e0;
+        }
+
+        /* 消息标题暗色模式 */
+        [data-theme="dark"] .message-title {
+            color: #e0e0e0;
+            border-bottom-color: #404040;
+        }
+
+        /* 消息内容暗色模式 */
+        [data-theme="dark"] .message-content {
+            background: #1a1a1a;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+
+        /* 提示信息暗色模式 */
+        [data-theme="dark"] .notice {
+            background-color: #1a1a1a;
+            border-left-color: #ffa000;
+            color: #e0e0e0;
+        }
+
+        /* 密码表单暗色模式 */
+        [data-theme="dark"] .password-form {
+            background: #2d2d2d;
+        }
+
+        [data-theme="dark"] input[type="password"] {
+            background-color: #1a1a1a;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
+
+        [data-theme="dark"] input[type="password"]:focus {
+            border-color: #4CAF50;
+            background-color: #2d2d2d;
+        }
+
+        /* 错误提示暗色模式 */
+        [data-theme="dark"] .error {
+            background-color: rgba(198, 40, 40, 0.15);
+            color: #ff6b6b;
+        }
+
+        /* 过期提示暗色模式 */
+        [data-theme="dark"] .expired-message {
+            background-color: rgba(198, 40, 40, 0.15);
+            color: #ff6b6b;
+        }
+
+        [data-theme="dark"] h1 {
+            color: #e0e0e0;
         }
 
         /* 消息容器 */
@@ -445,18 +508,21 @@
 
         // 添加系统主题变化监听
         if (window.matchMedia) {
+            const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            
+            // 处理主题变化的函数
+            const handleThemeChange = (e) => {
+                if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时响应系统变化
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                }
+            };
+
             // 初始化时检查系统主题
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时使用系统主题
-                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-            }
+            handleThemeChange(darkModeMediaQuery);
 
             // 监听系统主题变化
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-                if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时响应系统变化
-                    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-                }
-            });
+            darkModeMediaQuery.addEventListener('change', handleThemeChange);
         }
 
         // 添加倒计时功能
