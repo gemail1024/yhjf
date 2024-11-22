@@ -20,6 +20,13 @@ DATABASE_PATH = os.path.join(CURRENT_DIR, 'messages.db')
 # 从环境变量获取服务器地址，默认为本地地址
 SERVER_URL = os.getenv('SERVER_URL', 'http://127.0.0.1:5000')
 
+# 在文件开头添加路径配置
+class ZWSPaths:
+    """零宽字符路径配置"""
+    # 不使用斜杠分隔，直接用零宽字符作为前缀
+    VIEW = '\u200b\u200c'     # 直接作为hash的前缀
+    API  = '\u200d\u2060'     # 直接作为hash的前缀
+
 def get_db():
     db = sqlite3.connect(DATABASE_PATH)
     db.row_factory = sqlite3.Row
@@ -36,15 +43,33 @@ def get_next_counter():
         return 0
 
 def generate_hash2(length=4):
-    zero_width_chars = ['\u200b', '\u200c', '\u200d', '\u2060', '\ufeff']
+    """使用真正的零宽字符生成哈希"""
+    # 只使用完全不可见的零宽字符
+    zero_width_chars = [
+        '\u200b',  # 零宽空格 ZERO WIDTH SPACE
+        '\u200c',  # 零宽非连接符 ZERO WIDTH NON-JOINER
+        '\u200d',  # 零宽连接符 ZERO WIDTH JOINER
+        '\u2060',  # 词组连接符 WORD JOINER
+        '\ufeff',  # 零宽非断空格 ZERO WIDTH NO-BREAK SPACE
+    ]
+    
     counter = get_next_counter()
     
     # 基础哈希
     base_hash = ''.join(random.choices(zero_width_chars, k=length))
-    # 添加计数器作为后缀（转换为零宽字符表示）
+    # 添加计数器作为后缀（也使用零宽字符）
     counter_hash = ''.join(random.choices(zero_width_chars, k=len(str(counter))))
     
     return base_hash + counter_hash
+
+def create_url(base_url, prefix, hash):
+    """
+    创建没有额外斜杠的URL
+    base_url: 基础URL
+    prefix: 零宽字符前缀
+    hash: 消息哈希
+    """
+    return f"{base_url.rstrip('/')}/{prefix}{hash}"
 
 @app.route('/')
 def index():
@@ -58,11 +83,23 @@ def create_message():
         destroy_type = request.json.get('destroyType')
         expire_minutes = request.json.get('expireMinutes', 5)
         
+        # 内容验证
         if not content:
             return jsonify({'error': '消息内容不能为空'}), 400
         
+        # 内容长度验证
+        if len(content) > 512:
+            return jsonify({'error': '消息内容不能超过512个字符'}), 400
+            
+        # 密码长度验证（可选）
+        if password and len(password) > 32:
+            return jsonify({'error': '密码长度不能超过32个字符'}), 400
+        
         try:
             expire_minutes = int(expire_minutes)
+            # 限制过期时间范围（可选）
+            if expire_minutes < 1 or expire_minutes > 1440:  # 最长24小时
+                return jsonify({'error': '过期时间必须在1-1440分钟之间'}), 400
         except:
             return jsonify({'error': '过期时间必须是数字'}), 400
         
@@ -87,8 +124,8 @@ def create_message():
         
         db.commit()
         
-        # 生成完整的消息链接
-        message_url = f"{SERVER_URL}/view/{hash}"
+        # 生成使用零宽字符路径的链接
+        message_url = create_url(SERVER_URL, ZWSPaths.VIEW, hash)
         
         return jsonify({
             'success': True,
@@ -99,9 +136,17 @@ def create_message():
         print(f"创建消息错误: {e}")
         return jsonify({'error': '创建消息失败'}), 500
 
-@app.route('/view/<hash>', methods=['GET', 'POST'])
-def view_message(hash):
+@app.route('/<path:hash_path>', methods=['GET', 'POST'])
+def view_message(hash_path):
+    """处理所有可能的哈希路径"""
     try:
+        # 检查是否以VIEW前缀开头
+        if not hash_path.startswith(ZWSPaths.VIEW):
+            return render_template('view.html', error='消息不存在或已失效')
+        
+        # 提取实际的哈希值（去掉前缀）
+        hash = hash_path[len(ZWSPaths.VIEW):]
+        
         db = get_db()
         cursor = db.cursor()
         
@@ -190,7 +235,7 @@ def view_message(hash):
                     remaining_attempts=remaining_attempts
                 )
         
-        # 如果是阅后即焚，更新查看次数
+        # 如果是阅后即焚，更查看次数
         if msg['destroyType'] == 1:
             cursor.execute('''
                 UPDATE Msg 
