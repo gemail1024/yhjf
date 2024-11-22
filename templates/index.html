@@ -650,9 +650,11 @@
         const themeToggle = document.getElementById('themeToggle');
 
         // 定义一个函数来设置主题
-        function setTheme(theme) {
+        function setTheme(theme, saveToStorage = true) {
             document.body.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
+            if (saveToStorage) {
+                localStorage.setItem('theme', theme);
+            }
         }
 
         // 定义一个函数来获取系统主题
@@ -664,9 +666,10 @@
         function initializeTheme() {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
-                setTheme(savedTheme);
+                setTheme(savedTheme, false);
             } else {
-                setTheme(getSystemTheme());
+                const systemTheme = getSystemTheme();
+                setTheme(systemTheme, true);  // 保存系统主题作为初始设置
             }
         }
 
@@ -674,10 +677,14 @@
         initializeTheme();
 
         // 监听系统主题变化
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        darkModeMediaQuery.addListener((e) => {
             const savedTheme = localStorage.getItem('theme');
-            if (!savedTheme) {
-                setTheme(e.matches ? 'dark' : 'light');
+            const systemTheme = e.matches ? 'dark' : 'light';
+            
+            // 如果当前主题与系统主题不同，更新主题
+            if (document.body.getAttribute('data-theme') !== systemTheme) {
+                setTheme(systemTheme, true);
             }
         });
 
@@ -685,29 +692,8 @@
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
+            setTheme(newTheme, true);
         });
-
-        // 添加 CSS 媒体查询样式
-        const styleElement = document.createElement('style');
-        styleElement.textContent = `
-            @media (prefers-color-scheme: dark) {
-                body:not([data-theme="light"]) {
-                    background-color: #1a1a1a;
-                    color: #e0e0e0;
-                }
-                
-                body:not([data-theme="light"]) .container {
-                    background-color: #1a1a1a;
-                }
-                
-                body:not([data-theme="light"]) #messageForm,
-                body:not([data-theme="light"]) #result {
-                    background: #2d2d2d;
-                }
-            }
-        `;
-        document.head.appendChild(styleElement);
     </script>
 </body>
 </html> 

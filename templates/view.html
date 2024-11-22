@@ -505,42 +505,56 @@
     </div>
 
     <script>
-        // 使用相同的主题切换逻辑
+        // 修改主题切换相关的 JavaScript 代码
         const themeToggle = document.getElementById('themeToggle');
 
-        function setTheme(theme) {
+        // 定义一个函数来设置主题
+        function setTheme(theme, saveToStorage = true) {
             document.body.setAttribute('data-theme', theme);
-            localStorage.setItem('theme', theme);
+            if (saveToStorage) {
+                localStorage.setItem('theme', theme);
+            }
         }
 
+        // 定义一个函数来获取系统主题
         function getSystemTheme() {
             return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
 
+        // 初始化主题
         function initializeTheme() {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
-                setTheme(savedTheme);
+                setTheme(savedTheme, false);
             } else {
-                setTheme(getSystemTheme());
+                const systemTheme = getSystemTheme();
+                setTheme(systemTheme, true);  // 保存系统主题作为初始设置
             }
         }
 
+        // 页面加载时初始化主题
         initializeTheme();
 
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        // 监听系统主题变化
+        const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        darkModeMediaQuery.addListener((e) => {
             const savedTheme = localStorage.getItem('theme');
-            if (!savedTheme) {
-                setTheme(e.matches ? 'dark' : 'light');
+            const systemTheme = e.matches ? 'dark' : 'light';
+            
+            // 如果当前主题与系统主题不同，更新主题
+            if (document.body.getAttribute('data-theme') !== systemTheme) {
+                setTheme(systemTheme, true);
             }
         });
 
+        // 主题切换按钮点击事件
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
+            setTheme(newTheme, true);
         });
 
+        // 添加 CSS 媒体查询样式
         const styleElement = document.createElement('style');
         styleElement.textContent = `
             @media (prefers-color-scheme: dark) {
@@ -556,6 +570,23 @@
                 body:not([data-theme="light"]) .message,
                 body:not([data-theme="light"]) .password-form {
                     background: #2d2d2d;
+                }
+
+                body:not([data-theme="light"]) .message-content {
+                    background: #1a1a1a;
+                    border-color: #404040;
+                    color: #e0e0e0;
+                }
+
+                body:not([data-theme="light"]) input[type="password"] {
+                    background-color: #1a1a1a;
+                    border-color: #404040;
+                    color: #e0e0e0;
+                }
+
+                body:not([data-theme="light"]) input[type="password"]:focus {
+                    background-color: #2d2d2d;
+                    border-color: #4CAF50;
                 }
             }
         `;
