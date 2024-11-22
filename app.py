@@ -25,25 +25,26 @@ def get_db():
     db.row_factory = sqlite3.Row
     return db
 
-def generate_hash(length=6):
-    """生成短哈希值
-    length: 生成的哈希长度，默认6位
-    """
-    chars = string.ascii_letters + string.digits  # a-z A-Z 0-9
-    while True:
-        hash = ''.join(random.choices(chars, k=length))
-        db = get_db()
-        cursor = db.cursor()
-        try:
-            cursor.execute('SELECT hash FROM Hash WHERE hash = ?', (hash,))
-            if not cursor.fetchone():
-                cursor.execute('INSERT INTO Hash (hash) VALUES (?)', (hash,))
-                db.commit()
-                return hash
-        except sqlite3.Error as e:
-            print(f"数据库错误: {e}")
-            db.rollback()
-            raise
+def get_next_counter():
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute('SELECT MAX(id) FROM Hash')
+        result = cursor.fetchone()
+        return result[0] + 1 if result[0] else 0
+    except sqlite3.Error:
+        return 0
+
+def generate_hash2(length=4):
+    zero_width_chars = ['\u200b', '\u200c', '\u200d', '\u2060', '\ufeff']
+    counter = get_next_counter()
+    
+    # 基础哈希
+    base_hash = ''.join(random.choices(zero_width_chars, k=length))
+    # 添加计数器作为后缀（转换为零宽字符表示）
+    counter_hash = ''.join(random.choices(zero_width_chars, k=len(str(counter))))
+    
+    return base_hash + counter_hash
 
 @app.route('/')
 def index():
@@ -65,7 +66,8 @@ def create_message():
         except:
             return jsonify({'error': '过期时间必须是数字'}), 400
         
-        hash = generate_hash()
+        # 使用零宽字符生成哈希
+        hash = generate_hash2()
         db = get_db()
         cursor = db.cursor()
         
