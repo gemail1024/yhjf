@@ -85,7 +85,7 @@
             font-weight: 500;
         }
 
-        /* 密码表单 */
+        /* 密码单 */
         .password-form {
             background: white;
             padding: 25px;
@@ -246,23 +246,40 @@
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: #f0f0f0;
+            width: 44px;          /* 固定宽度 */
+            height: 44px;         /* 固定高度 */
+            padding: 0;
+            border-radius: 50%;   /* 圆形按钮 */
+            background: rgba(240, 240, 240, 0.9);  /* 半透明背景 */
             border: none;
-            cursor: pointer;
-            font-size: 14px;
+            cursor: pointer;      /* 改为指针样式 */
+            font-size: 20px;      /* 调整图标大小 */
             transition: all 0.3s ease;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            width: auto;
-            color: #333;
+            display: flex;        /* 使用 flex 布局居中图标 */
+            align-items: center;
+            justify-content: center;
         }
 
         .theme-toggle:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-            background: #e0e0e0;
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 暗色模式下的按钮样式 */
+        [data-theme="dark"] .theme-toggle {
+            background: rgba(45, 45, 45, 0.9);
+            color: #e0e0e0;
+        }
+
+        /* 移动端适配 */
+        @media screen and (max-width: 768px) {
+            .theme-toggle {
+                width: 40px;      /* 移动端稍微小一点 */
+                height: 40px;
+                font-size: 18px;
+            }
         }
 
         /* 暗色模式样式 */
@@ -346,8 +363,8 @@
     </style>
 </head>
 <body>
-    <button id="themeToggle" class="theme-toggle">
-        🌓 切换主题
+    <button id="themeToggle" class="theme-toggle" title="切换主题">
+        🌓
     </button>
     
     <!-- 添加容器 -->
@@ -422,7 +439,6 @@
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
         });
