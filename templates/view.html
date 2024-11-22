@@ -505,36 +505,61 @@
     </div>
 
     <script>
-        // 修改主题切换功能
+        // 使用相同的主题切换逻辑
         const themeToggle = document.getElementById('themeToggle');
-        
-        // 检查本地存储的主题设置
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            document.body.setAttribute('data-theme', savedTheme);
-        } else {
-            // 如果没有保存的主题，则使用系统主题
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.body.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
         }
-        
+
+        function getSystemTheme() {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                setTheme(savedTheme);
+            } else {
+                setTheme(getSystemTheme());
+            }
+        }
+
+        initializeTheme();
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            const savedTheme = localStorage.getItem('theme');
+            if (!savedTheme) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+
         themeToggle.addEventListener('click', () => {
             const currentTheme = document.body.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
-            document.body.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
+            setTheme(newTheme);
         });
 
-        // 修改系统主题变化监听
-        if (window.matchMedia) {
-            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-                if (!localStorage.getItem('theme')) {  // 只在用户未手动设置主题时响应系统变化
-                    const newTheme = e.matches ? 'dark' : 'light';
-                    document.body.setAttribute('data-theme', newTheme);
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            @media (prefers-color-scheme: dark) {
+                body:not([data-theme="light"]) {
+                    background-color: #1a1a1a;
+                    color: #e0e0e0;
                 }
-            });
-        }
+                
+                body:not([data-theme="light"]) .container {
+                    background-color: #1a1a1a;
+                }
+                
+                body:not([data-theme="light"]) .message,
+                body:not([data-theme="light"]) .password-form {
+                    background: #2d2d2d;
+                }
+            }
+        `;
+        document.head.appendChild(styleElement);
 
         // 添加倒计时功能
         function startCountdown() {
