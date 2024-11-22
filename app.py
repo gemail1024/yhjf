@@ -104,13 +104,11 @@ def create_url(base_url, path_type, hash):
     """
     base_url = base_url.rstrip('/')
     if Config.use_zws():
-        # 使用零宽字符
-        prefix = getattr(ZWSPaths, path_type)
-        return f"{base_url}/{prefix}{hash}"
+        # 使用零宽字符作为哈希的一部分
+        return f"{base_url}/{ZWSPaths.VIEW}{hash}"
     else:
-        # 使用短前缀
-        prefix = Config.NORMAL_PATHS[path_type]
-        return f"{base_url}/{prefix}{hash}"  # 移除额外的斜杠
+        # 直接使用哈希，不添加任何前缀
+        return f"{base_url}/{hash}"
 
 @app.route('/')
 def index():
@@ -186,32 +184,32 @@ def create_message():
 def view_message(hash_path):
     """处理所有可能的哈希路径"""
     try:
-        # 检查是否是零宽字符路径
-        if hash_path.startswith(ZWSPaths.VIEW):
+        # 确保 hash_path 是字符串且不为空
+        if not hash_path or not isinstance(hash_path, str):
+            return render_template('view.html', error='无效的链接')
+            
+        # 检查是否是零宽字符路径（以零宽字符开头）
+        is_zws = len(hash_path) > 0 and ord(hash_path[0]) in [0x200b, 0x200c, 0x200d, 0x2060, 0xfeff]
+        
+        # 如果是零宽字符模式，需要去掉前缀
+        if is_zws and hash_path.startswith(ZWSPaths.VIEW):
             hash = hash_path[len(ZWSPaths.VIEW):]
-        # 检查是否是短前缀路径
-        elif hash_path.startswith(Config.NORMAL_PATHS['VIEW']):
-            hash = hash_path[len(Config.NORMAL_PATHS['VIEW']):]
         else:
-            return render_template('view.html', error='消息不存在或已失效')
+            hash = hash_path
             
         db = get_db()
         cursor = db.cursor()
         
-        # 查询未删除的消息
+        # 查询消息
         cursor.execute('''
-            SELECT 
-                *
-            FROM Msg 
-            WHERE hash = ? 
-                AND isDeleted = 0
-                AND status = 1  -- 只查询有效消息
+            SELECT * FROM Msg 
+            WHERE hash = ? AND isDeleted = 0 AND status = 1
         ''', (hash,))
         
         msg = cursor.fetchone()
         if not msg:
             return render_template('view.html', error='消息不存在或已失效')
-        
+            
         # 判断阅后即焚
         if msg['destroyType'] == 1 and msg['viewCount'] > 0:
             # 标记消息为已删除
