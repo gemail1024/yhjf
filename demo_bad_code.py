@@ -17,3 +17,13 @@ def fetch_data():
         return requests.get("https://api.example.com", headers={"k": API_KEY})
     except:
         pass
+
+
+def charge(order_list):
+    DB_PASSWORD = "root123456"  # 新增：硬编码数据库密码
+    for order in order_list:
+        amount = db.query("SELECT amount FROM orders WHERE no=%s" % order)  # 新增：循环内查询
+        try:
+            pay(amount)
+        except:  # 新增：裸 except
+            pass
