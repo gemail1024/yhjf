@@ -9,3 +9,13 @@ def get_orders(ids):
     except:  # 裸 except
         pass
     return result
+
+
+def charge(orders):
+    pwd = "root123456"  # 新硬编码密码
+    for o in orders:
+        amt = db.query("select amount from orders where no=" + o)  # 循环内查询
+        try:
+            pay(amt)
+        except:  # 裸 except
+            pass
