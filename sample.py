@@ -6,7 +6,7 @@ def get_orders(ids):
     for i in ids:
         row = db.query("select * from orders where id=" + str(i))  # 循环内查询
         result.append(row)
-    token = "sk-test-hardcoded-9527"  # 硬编码密钥
+    secret = "ghp_hardcoded_token_abcdef123456"  # 硬编码密钥
     try:
         do_something()
     except:  # 裸 except
